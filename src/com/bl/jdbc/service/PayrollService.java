@@ -7,34 +7,41 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.bl.jdbc.DbConnection;
+import com.bl.jdbc.sql.SqlQueries;
 
 public class PayrollService {
 
+	Connection con;
+	SqlQueries sql;
+
+	public void resetConnection() {
+		con = DbConnection.init().getConnection();
+		sql = new SqlQueries();
+	}
+
 	public void getEmpData() {
-
-		Connection connection = DbConnection.getConnection();
-
+		resetConnection();
+		System.out.println("-------------------Employee Data-------------------------");
 		try {
-			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("select * from employee_tbl");
+			Statement st = con.createStatement();
+			ResultSet rs = st.executeQuery(sql.SELECT_EMP_DATA);
 
 			while (rs.next()) {
 				System.out.println(rs.getInt(1) + "\t" + rs.getString(2) + "\t"
 						+ rs.getDate(3) + "\t" + rs.getString(4));
 			}
 
-			connection.close();
+			con.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void updateSalarySt(int emp_id, double basic_pay) {
-
-		Connection connection = DbConnection.getConnection();
-
+		resetConnection();
 		try {
-			Statement st = connection.createStatement();
+			con = DbConnection.init().getConnection();
+			Statement st = con.createStatement();
 			double deduction = basic_pay * 0.10;
 			double taxable_pay = basic_pay - deduction;
 			double tax = taxable_pay * 0.20;
@@ -53,7 +60,7 @@ public class PayrollService {
 						"Something went wrong while updating the data.");
 			}
 
-			connection.close();
+			con.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -61,12 +68,9 @@ public class PayrollService {
 	}
 
 	public void updateSalary(int emp_id, double basic_pay) {
-
-		Connection connection = DbConnection.getConnection();
-
+		resetConnection();
 		try {
-			PreparedStatement ps = connection.prepareStatement(
-					"update payroll_tbl set basic_pay = ?, deduction = ?, taxable_pay = ?, tax = ?, net_pay = ? where emp_id = ?");
+			PreparedStatement ps = con.prepareStatement(sql.UPDATE_SALARY);
 			ps.setDouble(1, basic_pay);
 			double deduction = basic_pay * 0.10;
 			ps.setDouble(2, deduction);
@@ -82,16 +86,62 @@ public class PayrollService {
 
 			if (isUpdated == 1) {
 				System.out.println("Data is updated successfully");
+				showPayrollData();
 			} else {
 				System.out.println(
 						"Something went wrong while updating the data.");
 			}
 
-			connection.close();
+			con.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void showPayrollData() {
+		resetConnection();
+		System.out.println("-------------------Employee payroll data-----------------------");
+		try {
+			Statement st = con.createStatement();
+			ResultSet rs = st.executeQuery(sql.SELECT_EMP_PAYROLL_DATA);
+
+			while (rs.next()) {
+				System.out.print(rs.getInt("emp_id") + "\t");
+				System.out.print(rs.getString("emp_name") + "\t");
+				System.out.print(rs.getInt("payroll_id") + "\t");
+				System.out.print(rs.getDouble("basic_pay") + "\t");
+				System.out.print(rs.getDouble("deduction") + "\t");
+				System.out.print(rs.getDouble("taxable_pay") + "\t");
+				System.out.print(rs.getDouble("tax") + "\t");
+				System.out.print(rs.getDouble("net_pay") + "\t");
+				System.out.println();
+			}
+			con.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
 	}
 
+	public void getEmpDataByJoinDate(String startDate, String endDate) {
+		resetConnection();
+		System.out.println("---------------Employee data based on join date------------------");
+		try {
+			PreparedStatement ps = con.prepareStatement(sql.SELECT_EMP_DATA_BY_JOIN_DATE);
+			ps.setString(1, startDate);
+			ps.setString(2, endDate);
+			ResultSet rs = ps.executeQuery();
+			
+			while (rs.next()) {
+				System.out.print(rs.getInt("emp_id") + "\t");
+				System.out.print(rs.getString("emp_name") + "\t");
+				System.out.print(rs.getString("join_date") + "\t");
+				System.out.print(rs.getString("gender") + "\t");
+				System.out.println();
+			}
+			con.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 }

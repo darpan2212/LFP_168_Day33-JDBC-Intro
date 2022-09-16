@@ -8,32 +8,43 @@ import java.util.Enumeration;
 
 public class DbConnection {
 
-	public static Connection getConnection() {
-		String jdbcStr = "jdbc:mysql://localhost:3306/payroll_service";
-		String userName = "root";
-		String password = "root";
-		Connection con = null;
+	private static DbConnection dbConnection;
+
+	private Connection con;
+
+	private DbConnection() {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-
 			listDrivers();
-
-			con = DriverManager.getConnection(jdbcStr, userName, password);
-
 			System.out.println("Connection established successfully.");
 		} catch (ClassNotFoundException e) {
 			System.out.println(
 					"Driver class could not find, please add the mysql-connector.jar file.");
 			e.printStackTrace();
+		}
+	}
+
+	public static DbConnection init() {
+		if (dbConnection == null)
+			dbConnection = new DbConnection();
+		return dbConnection;
+	}
+
+	public Connection getConnection() {
+		String jdbcStr = "jdbc:mysql://localhost:3306/payroll_service";
+		String userName = "root";
+		String password = "root";
+		try {
+			con = DriverManager.getConnection(jdbcStr, userName, password);
 		} catch (SQLException e) {
 			System.out.println(
-					"Connection could not establish with mysql server, kindly check the configuration");
+					"Database connection failed, check your configurations.");
 			e.printStackTrace();
 		}
 		return con;
 	}
 
-	private static void listDrivers() {
+	private void listDrivers() {
 		Enumeration<Driver> drivers = DriverManager.getDrivers();
 		while (drivers.hasMoreElements()) {
 			Driver d = drivers.nextElement();
