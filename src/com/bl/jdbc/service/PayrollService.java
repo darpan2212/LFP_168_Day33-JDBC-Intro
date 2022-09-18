@@ -125,7 +125,7 @@ public class PayrollService {
 		}
 
 	}
-	
+
 	public void showEmpDeptPayrollData() {
 		resetConnection();
 		System.out.println(
@@ -201,6 +201,7 @@ public class PayrollService {
 		resetConnection();
 
 		try {
+			con.setAutoCommit(false);
 			PreparedStatement ps = con.prepareStatement(sql.INSERT_EMP_DATA,
 					PreparedStatement.RETURN_GENERATED_KEYS);
 			ps.setString(1, empName);
@@ -221,11 +222,17 @@ public class PayrollService {
 					addEmpPayrollDetails(generatedEmpId, basic_pay);
 				}
 			} else {
+				con.rollback();
 				System.err.println(
 						"Something went wrong while inserting data to the DB.");
 			}
 			con.close();
 		} catch (SQLException e) {
+			try {
+				con.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 			System.err.println(
 					"Something went wrong while inserting data to the DB.");
 			e.printStackTrace();
@@ -233,8 +240,6 @@ public class PayrollService {
 	}
 
 	private void addEmpPayrollDetails(int empId, double basic_pay) {
-		resetConnection();
-
 		try {
 			PreparedStatement ps = con
 					.prepareStatement(sql.INSERT_EMP_PAYROLL_DATA);
@@ -251,13 +256,20 @@ public class PayrollService {
 			int noOfRowsAffected = ps.executeUpdate();
 
 			if (noOfRowsAffected == 1) {
+				con.commit();
 				System.out.println("Employee payroll data saved successfully.");
 			} else {
+				con.rollback();
 				System.err.println(
 						"Something went wrong while inserting Employee payroll data in DB.");
 			}
 			con.close();
 		} catch (SQLException e) {
+			try {
+				con.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 			System.err.println(
 					"Something went wrong while inserting Employee payroll data in DB.");
 			e.printStackTrace();
@@ -265,7 +277,6 @@ public class PayrollService {
 	}
 
 	private void addEmpDepartmentDetails(int empId, int deptId) {
-		resetConnection();
 		try {
 			PreparedStatement ps = con
 					.prepareStatement(sql.INSERT_EMP_DEPT_DATA);
@@ -277,11 +288,16 @@ public class PayrollService {
 				System.out.println(
 						"Employee department details added successfully");
 			} else {
+				con.rollback();
 				System.err.println(
 						"Something went wrong while inserting employee department details.");
 			}
-
 		} catch (SQLException e) {
+			try {
+				con.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 			System.err.println(
 					"Something went wrong while inserting employee department details.");
 			e.printStackTrace();
